@@ -1,29 +1,1314 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mapa Urgencias — CareFlow × Hospiten</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { height: 100vh; overflow: hidden; }
-    iframe {
-      width: 100%;
-      height: 100vh;
-      border: none;
-      display: block;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mapa de Proceso AS-IS — Urgencias | CareFlow × Hospiten Paitilla</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy:   #1B2C4E;
+    --navy2:  #243762;
+    --teal:   #1B7A8F;
+    --teal2:  #15697B;
+    --orange: #E07B2A;
+    --orange2:#C96B20;
+    --green:  #27AE60;
+    --red:    #E74C3C;
+    --lgray:  #F4F7FB;
+    --mgray:  #DDE3EE;
+    --dgray:  #8896AA;
+    --text:   #1A2332;
+    --white:  #FFFFFF;
+    --sap-color: #1B7A8F;
+    --emed-color: #E07B2A;
+    --aseg-color: #7B5EA7;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--lgray);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ─────────────────────────────────────── */
+  .header {
+    background: var(--navy);
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.25);
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .logo-badge {
+    background: var(--teal);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    padding: 5px 12px;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+  .header h1 {
+    color: white;
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+  }
+  .header h1 span { color: var(--teal); font-weight: 700; }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .btn-export {
+    background: var(--orange);
+    color: white;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    letter-spacing: 0.3px;
+  }
+  .btn-export:hover { background: var(--orange2); }
+  .btn-reset {
+    background: transparent;
+    color: var(--dgray);
+    border: 1px solid rgba(255,255,255,0.15);
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-reset:hover { border-color: white; color: white; }
+
+  /* ── LEGEND BAR ──────────────────────────────────── */
+  .legend-bar {
+    background: white;
+    border-bottom: 1px solid var(--mgray);
+    padding: 10px 32px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .legend-bar span { font-size: 12px; color: var(--dgray); font-weight: 500; margin-right: 4px; }
+  .legend-item {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--text); font-weight: 400;
+  }
+  .legend-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+  }
+  .badge-mini {
+    font-size: 10px; font-weight: 700; padding: 2px 7px;
+    border-radius: 3px; letter-spacing: 0.5px; font-family: 'DM Mono', monospace;
+  }
+  .badge-sap  { background: #D6EEF4; color: var(--sap-color); }
+  .badge-emed { background: #FDEBD0; color: var(--emed-color); }
+  .badge-aseg { background: #EDE7F6; color: var(--aseg-color); }
+
+  /* ── STATUS INFO BAR ────────────────────────────── */
+  .status-bar {
+    background: var(--navy);
+    color: white;
+    padding: 8px 32px;
+    display: flex;
+    gap: 32px;
+    font-size: 12px;
+  }
+  .status-item { display: flex; align-items: center; gap: 8px; opacity: 0.8; }
+  .status-count {
+    font-weight: 700;
+    font-size: 15px;
+    opacity: 1;
+    color: var(--teal);
+  }
+  .status-count.orange { color: var(--orange); }
+  .status-count.green  { color: #4ADE80; }
+
+  /* ── MAIN CONTAINER ─────────────────────────────── */
+  .main { padding: 28px 24px 60px; }
+
+  /* ── INTRO CARD ──────────────────────────────────── */
+  .intro-card {
+    background: white;
+    border: 1px solid var(--mgray);
+    border-left: 4px solid var(--teal);
+    border-radius: 8px;
+    padding: 16px 22px;
+    margin-bottom: 28px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .intro-icon {
+    width: 36px; height: 36px; min-width: 36px;
+    background: var(--teal);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .intro-card h2 { font-size: 14px; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
+  .intro-card p { font-size: 13px; color: var(--dgray); line-height: 1.5; }
+  .intro-card strong { color: var(--navy); }
+
+  /* ── FLOW TRACK ──────────────────────────────────── */
+  .flow-container {
+    position: relative;
+  }
+
+  /* connector line between stages */
+  .flow-connector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
+    position: relative;
+  }
+  .flow-connector::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0; bottom: 0;
+    width: 2px;
+    background: var(--mgray);
+    transform: translateX(-50%);
+  }
+  .flow-connector-arrow {
+    background: white;
+    border: 2px solid var(--mgray);
+    border-radius: 50%;
+    width: 24px; height: 24px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    color: var(--dgray);
+    position: relative;
+    z-index: 2;
+  }
+
+  /* ── STAGE CARD ──────────────────────────────────── */
+  .stage-card {
+    background: white;
+    border: 2px solid var(--mgray);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    position: relative;
+  }
+  .stage-card:hover { box-shadow: 0 4px 24px rgba(27,44,78,0.1); }
+  .stage-card.confirmed { border-color: var(--green); }
+  .stage-card.modified  { border-color: var(--orange); }
+  .stage-card.missing   { border-color: var(--red); }
+
+  .stage-header {
+    display: flex;
+    align-items: stretch;
+    cursor: pointer;
+    user-select: none;
+  }
+  .stage-number {
+    width: 56px; min-width: 56px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 700;
+    color: white;
+    font-family: 'DM Mono', monospace;
+  }
+  .stage-header-content {
+    flex: 1;
+    padding: 14px 18px 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .stage-title-group { flex: 1; }
+  .stage-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--dgray);
+    margin-bottom: 3px;
+  }
+  .stage-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--navy);
+    line-height: 1.2;
+  }
+  .stage-subtitle {
+    font-size: 12px;
+    color: var(--dgray);
+    margin-top: 3px;
+    font-style: italic;
+  }
+  .stage-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+  .stage-badges { display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; }
+  .badge {
+    font-size: 10px; font-weight: 700; padding: 3px 8px;
+    border-radius: 4px; letter-spacing: 0.5px; font-family: 'DM Mono', monospace;
+    white-space: nowrap;
+  }
+  .badge-sap-lg  { background: #D6EEF4; color: var(--sap-color); }
+  .badge-emed-lg { background: #FDEBD0; color: var(--emed-color); }
+  .badge-aseg-lg { background: #EDE7F6; color: var(--aseg-color); }
+  .badge-crit    { background: #FDEDED; color: var(--red); }
+  .badge-key     { background: #FFF4E5; color: var(--orange); }
+
+  .stage-expand-btn {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--lgray);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    color: var(--dgray);
+    transition: transform 0.25s, background 0.2s;
+    flex-shrink: 0;
+    align-self: center;
+  }
+  .stage-card.open .stage-expand-btn { transform: rotate(180deg); background: var(--mgray); }
+
+  /* status ribbon */
+  .status-ribbon {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 18px 6px 72px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .stage-card.confirmed .status-ribbon { display: flex; background: #F0FBF4; color: var(--green); }
+  .stage-card.modified  .status-ribbon { display: flex; background: #FFF8F0; color: var(--orange); }
+  .stage-card.missing   .status-ribbon { display: flex; background: #FEF0F0; color: var(--red); }
+  .status-ribbon-note {
+    font-weight: 400;
+    color: var(--dgray);
+    font-style: italic;
+    margin-left: 8px;
+  }
+
+  /* ── BODY CONTENT ────────────────────────────────── */
+  .stage-body {
+    display: none;
+    border-top: 1px solid var(--mgray);
+    animation: slideDown 0.2s ease;
+  }
+  .stage-card.open .stage-body { display: block; }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .stage-body-inner {
+    padding: 20px 20px 20px 72px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  /* steps list */
+  .steps-section h4, .systems-section h4, .friction-section h4 {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--dgray);
+    margin-bottom: 10px;
+  }
+
+  .steps-list { list-style: none; }
+  .step-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 7px 0;
+    border-bottom: 1px dashed var(--mgray);
+    cursor: pointer;
+    transition: background 0.15s;
+    border-radius: 4px;
+    padding: 8px 6px;
+    margin: 0 -6px;
+  }
+  .step-item:hover { background: var(--lgray); }
+  .step-item:last-child { border-bottom: none; }
+  .step-num {
+    width: 20px; height: 20px; min-width: 20px;
+    border-radius: 50%;
+    background: var(--mgray);
+    color: var(--navy);
+    font-size: 10px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Mono', monospace;
+    transition: all 0.2s;
+  }
+  .step-item.step-confirmed .step-num { background: var(--green); color: white; }
+  .step-item.step-modified  .step-num { background: var(--orange); color: white; }
+  .step-text {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.4;
+    flex: 1;
+  }
+  .step-item.step-confirmed .step-text { color: var(--green); }
+  .step-item.step-modified  .step-text { text-decoration: line-through; color: var(--dgray); }
+  .step-system {
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+    align-self: center;
+  }
+
+  /* systems panel */
+  .systems-panel {
+    background: var(--lgray);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .system-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    margin-bottom: 10px;
+  }
+  .system-item:last-child { margin-bottom: 0; }
+  .system-icon {
+    font-size: 16px;
+    width: 28px; height: 28px; min-width: 28px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .system-icon.sap  { background: #D6EEF4; }
+  .system-icon.emed { background: #FDEBD0; }
+  .system-icon.aseg { background: #EDE7F6; }
+  .system-icon.manual { background: #F0F0F0; }
+  .system-text { font-size: 12px; line-height: 1.4; color: var(--text); }
+  .system-text strong { color: var(--navy); font-weight: 700; }
+
+  /* friction note */
+  .friction-note {
+    background: #FFF8F0;
+    border-left: 3px solid var(--orange);
+    border-radius: 0 6px 6px 0;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.5;
+    margin-top: 10px;
+  }
+  .friction-note .fn-label {
+    font-weight: 700;
+    color: var(--orange);
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  /* key question */
+  .key-question {
+    background: #EDF6FA;
+    border-left: 3px solid var(--teal);
+    border-radius: 0 6px 6px 0;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.5;
+    margin-top: 10px;
+  }
+  .key-question .kq-label {
+    font-weight: 700;
+    color: var(--teal);
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  /* action buttons */
+  .stage-actions {
+    display: flex;
+    gap: 8px;
+    padding: 12px 20px 16px 72px;
+    border-top: 1px solid var(--mgray);
+    background: var(--lgray);
+    flex-wrap: wrap;
+  }
+  .btn-action {
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .btn-confirm  { background: white; border-color: var(--green); color: var(--green); }
+  .btn-confirm:hover, .btn-confirm.active  { background: var(--green); color: white; }
+  .btn-modify   { background: white; border-color: var(--orange); color: var(--orange); }
+  .btn-modify:hover, .btn-modify.active   { background: var(--orange); color: white; }
+  .btn-add-step { background: white; border-color: var(--navy); color: var(--navy); }
+  .btn-add-step:hover { background: var(--navy); color: white; }
+  .btn-note     { background: white; border-color: var(--dgray); color: var(--dgray); }
+  .btn-note:hover { background: var(--dgray); color: white; }
+
+  /* note input area */
+  .note-area {
+    display: none;
+    padding: 0 20px 16px 72px;
+    background: var(--lgray);
+    gap: 8px;
+  }
+  .note-area.visible { display: flex; }
+  .note-input {
+    flex: 1;
+    border: 2px solid var(--mgray);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    background: white;
+    color: var(--text);
+    resize: none;
+    height: 60px;
+    transition: border-color 0.2s;
+  }
+  .note-input:focus { outline: none; border-color: var(--teal); }
+  .btn-save-note {
+    background: var(--teal);
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    align-self: flex-end;
+    transition: background 0.2s;
+  }
+  .btn-save-note:hover { background: var(--teal2); }
+
+  /* add step area */
+  .add-step-area {
+    display: none;
+    padding: 0 20px 16px 72px;
+    background: var(--lgray);
+    gap: 8px;
+    align-items: center;
+  }
+  .add-step-area.visible { display: flex; }
+  .add-step-input {
+    flex: 1;
+    border: 2px solid var(--navy);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    background: white;
+    color: var(--text);
+  }
+  .add-step-input:focus { outline: none; }
+  .btn-save-step {
+    background: var(--navy);
+    color: white;
+    border: none;
+    padding: 9px 14px;
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-save-step:hover { background: var(--navy2); }
+
+  /* critical stage highlight */
+  .stage-card.critical-stage .stage-number { position: relative; }
+  .stage-card.critical-stage .stage-number::after {
+    content: '!';
+    position: absolute;
+    top: 8px; right: 8px;
+    width: 14px; height: 14px;
+    background: var(--orange);
+    border-radius: 50%;
+    font-size: 9px;
+    display: flex; align-items: center; justify-content: center;
+    color: white;
+    font-weight: 900;
+    line-height: 14px;
+    text-align: center;
+  }
+
+  /* ── SUMMARY PANEL ──────────────────────────────── */
+  .summary-panel {
+    background: var(--navy);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-top: 32px;
+    color: white;
+  }
+  .summary-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin-bottom: 16px;
+  }
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .summary-stat {
+    background: rgba(255,255,255,0.07);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .summary-stat-num {
+    font-size: 32px;
+    font-weight: 700;
+    font-family: 'DM Mono', monospace;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .summary-stat-label { font-size: 12px; color: rgba(255,255,255,0.55); }
+  .summary-notes-area {
+    background: rgba(255,255,255,0.05);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .summary-notes-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 10px;
+  }
+  .note-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.8);
+    margin: 3px;
+  }
+  .note-tag-stage { color: var(--teal); font-weight: 700; font-size: 11px; }
+  #notes-output { font-size: 12px; line-height: 1.7; }
+  #notes-output p { padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .no-notes { color: rgba(255,255,255,0.3); font-style: italic; font-size: 13px; }
+
+  /* ── PRINT / EXPORT MODAL ─────────────────────────── */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.visible { display: flex; }
+  .modal-box {
+    background: white;
+    border-radius: 12px;
+    padding: 32px;
+    width: min(560px, 90vw);
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .modal-box h2 { font-size: 18px; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
+  .modal-box p  { font-size: 13px; color: var(--dgray); margin-bottom: 20px; line-height: 1.5; }
+  .modal-section { margin-bottom: 16px; }
+  .modal-section h3 { font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--teal); margin-bottom: 8px; }
+  .modal-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--mgray); font-size: 13px; gap: 12px; }
+  .modal-row:last-child { border-bottom: none; }
+  .modal-row-label { font-weight: 600; color: var(--navy); min-width: 160px; }
+  .modal-row-value { color: var(--dgray); text-align: right; flex: 1; }
+  .modal-status { font-weight: 700; }
+  .modal-status.confirmed { color: var(--green); }
+  .modal-status.modified  { color: var(--orange); }
+  .modal-status.pending   { color: var(--dgray); }
+  .modal-note-box {
+    background: var(--lgray);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--text);
+    font-style: italic;
+    margin-top: 4px;
+  }
+  .modal-btns { display: flex; gap: 10px; margin-top: 24px; }
+  .btn-print {
+    background: var(--navy);
+    color: white;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    flex: 1;
+    transition: background 0.2s;
+  }
+  .btn-print:hover { background: var(--navy2); }
+  .btn-close {
+    background: white;
+    color: var(--navy);
+    border: 2px solid var(--mgray);
+    padding: 10px 22px;
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-close:hover { border-color: var(--navy); }
+
+  /* toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--navy);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 300;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s;
+    pointer-events: none;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.success { background: var(--green); }
+  .toast.warning { background: var(--orange); }
+
+  /* new step badge */
+  .new-step-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 8px 6px; margin: 0 -6px;
+    border-bottom: 1px dashed var(--mgray);
+    background: #FFF4E5;
+    border-radius: 4px;
+  }
+  .new-step-badge {
+    font-size: 9px; font-weight: 700; padding: 2px 5px;
+    border-radius: 3px; background: var(--orange); color: white;
+    letter-spacing: 0.5px; align-self: center; white-space: nowrap;
+  }
+
+  @media (max-width: 700px) {
+    .stage-body-inner { grid-template-columns: 1fr; }
+    .summary-grid { grid-template-columns: repeat(2, 1fr); }
+    .header h1 { font-size: 13px; }
+    .main { padding: 16px 12px 40px; }
+    .stage-body-inner, .stage-actions, .note-area, .add-step-area { padding-left: 16px; }
+  }
+</style>
 </head>
 <body>
-  <iframe 
-    src="https://claude.site/public/artifacts/024f25ae-fa21-4caa-aa54-85c1b92ff277/embed"
-    title="Mapa Proceso Urgencias CareFlow"
-    width="100%"
-    height="100%"
-    frameborder="0"
-    allow="clipboard-write"
-    allowfullscreen>
-  </iframe>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo-badge">CareFlow</div>
+    <h1><span>Mapa AS-IS</span> · Proceso de Urgencias · Hospiten Paitilla</h1>
+  </div>
+  <div class="header-right">
+    <button class="btn-reset" onclick="resetAll()">↺ Reiniciar</button>
+    <button class="btn-export" onclick="openExport()">📋 Ver Resumen</button>
+  </div>
+</div>
+
+<!-- LEGEND -->
+<div class="legend-bar">
+  <span>SISTEMAS:</span>
+  <div class="legend-item"><span class="badge-mini badge-sap">SAP</span> Backend administrativo</div>
+  <div class="legend-item"><span class="badge-mini badge-emed">EMED</span> Interfaz clínica</div>
+  <div class="legend-item"><span class="badge-mini badge-aseg">ASEG</span> Aseguradora</div>
+  <span style="margin-left:8px">ESTADOS:</span>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div> Confirmado</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div> Modificado</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--mgray)"></div> Pendiente validar</div>
+</div>
+
+<!-- STATUS BAR -->
+<div class="status-bar">
+  <div class="status-item">Etapas: <span class="status-count" id="total-stages">7</span></div>
+  <div class="status-item">Confirmadas: <span class="status-count green" id="confirmed-count">0</span></div>
+  <div class="status-item">Modificadas: <span class="status-count orange" id="modified-count">0</span></div>
+  <div class="status-item">Pasos nuevos agregados: <span class="status-count orange" id="new-steps-count">0</span></div>
+</div>
+
+<!-- INTRO CARD -->
+<div class="main">
+<div class="intro-card">
+  <div class="intro-icon">🗺️</div>
+  <div>
+    <h2>Validación del Mapa de Proceso — Sesión 1: Urgencias</h2>
+    <p>Este es el mapa preliminar del proceso de urgencias identificado por el equipo de CareFlow. <strong>Por favor revise cada etapa junto con Marinela:</strong> confirme los pasos que son correctos, modifique los que sean diferentes, y agregue cualquier paso o etapa que no esté contemplada. Toque cada etapa para expandirla.</p>
+  </div>
+</div>
+
+<!-- FLOW -->
+<div class="flow-container" id="flow-container">
+</div>
+
+<!-- SUMMARY PANEL -->
+<div class="summary-panel">
+  <div class="summary-title">📊 Resumen de Validación en Tiempo Real</div>
+  <div class="summary-grid">
+    <div class="summary-stat">
+      <div class="summary-stat-num" id="s-confirmed" style="color:#4ADE80">0</div>
+      <div class="summary-stat-label">Etapas confirmadas</div>
+    </div>
+    <div class="summary-stat">
+      <div class="summary-stat-num" id="s-modified" style="color:var(--orange)">0</div>
+      <div class="summary-stat-label">Etapas modificadas</div>
+    </div>
+    <div class="summary-stat">
+      <div class="summary-stat-num" id="s-pending" style="color:var(--dgray)">7</div>
+      <div class="summary-stat-label">Pendientes validar</div>
+    </div>
+    <div class="summary-stat">
+      <div class="summary-stat-num" id="s-new-steps" style="color:var(--orange)">0</div>
+      <div class="summary-stat-label">Pasos nuevos</div>
+    </div>
+  </div>
+  <div class="summary-notes-area">
+    <div class="summary-notes-title">Notas y modificaciones capturadas</div>
+    <div id="notes-output"><p class="no-notes">Las notas aparecerán aquí conforme se vayan capturando durante la sesión.</p></div>
+  </div>
+</div>
+
+</div><!-- .main -->
+
+<!-- EXPORT MODAL -->
+<div class="modal-overlay" id="modal" onclick="closeExportOutside(event)">
+  <div class="modal-box">
+    <h2>Resumen de Validación</h2>
+    <p>Estado actual del mapa de proceso según la validación con Hospiten Paitilla. Imprima o tome captura de pantalla para registrar los acuerdos de esta sesión.</p>
+    <div id="modal-content"></div>
+    <div class="modal-btns">
+      <button class="btn-print" onclick="window.print()">🖨 Imprimir / Guardar PDF</button>
+      <button class="btn-close" onclick="closeExport()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────
+const stages = [
+  {
+    id: 1,
+    color: "#1B2C4E",
+    label: "Etapa 1",
+    title: "Llegada y Primer Contacto",
+    subtitle: "Desde que el paciente llega a urgencias hasta que es registrado",
+    badges: [],
+    critical: false,
+    steps: [
+      { text: "Paciente llega a la puerta de urgencias (caminando, en silla, en ambulancia)", system: null },
+      { text: "Personal de seguridad / recepcionista recibe al paciente", system: null },
+      { text: "Se solicita documento de identidad (cédula) y carné de seguro", system: null },
+      { text: "Se verifica si el paciente tiene seguro activo", system: "SAP" },
+      { text: "Se abre registro inicial del paciente en SAP", system: "SAP" },
+      { text: "Paciente pasa a sala de espera de triaje", system: null },
+    ],
+    systems: [
+      { icon: "🗄️", type: "sap", label: "SAP", desc: "Apertura del registro del paciente, búsqueda de historial previo, verificación de seguro." },
+      { icon: "📋", type: "manual", label: "Manual", desc: "Formulario físico de pre-registro con datos del paciente y acompañante." },
+    ],
+    friction: "En hospitales similares, la verificación manual de seguro en este punto toma 5-15 min. ¿Es el caso aquí?",
+    keyQuestion: "¿Se abre el registro en SAP antes del triaje, durante o después? ¿Quién lo abre — la recepcionista o admisiones?"
+  },
+  {
+    id: 2,
+    color: "#1B7A8F",
+    label: "Etapa 2",
+    title: "Triaje Clínico",
+    subtitle: "Clasificación de urgencia y primer diagnóstico",
+    badges: ["EMED"],
+    critical: false,
+    steps: [
+      { text: "Paciente pasa al área de triaje con enfermera", system: null },
+      { text: "Enfermera evalúa signos vitales y motivo de consulta", system: null },
+      { text: "Enfermera ingresa datos iniciales en EMED", system: "EMED" },
+      { text: "Se asigna nivel de triaje (urgente / no urgente)", system: null },
+      { text: "Se genera o registra diagnóstico preliminar con código ICD-10", system: "EMED" },
+      { text: "Paciente es dirigido a consultorio o sala de espera médica", system: null },
+    ],
+    systems: [
+      { icon: "💊", type: "emed", label: "EMED", desc: "Registro del triaje, captura de signos vitales, asignación de nivel de urgencia y diagnóstico preliminar ICD-10." },
+    ],
+    friction: "El código ICD-10 puede ingresarse tarde o solo al alta. Si no se genera aquí, CareFlow no puede disparar la preautorización automática.",
+    keyQuestion: "¿EMED genera el código ICD-10 obligatoriamente en el triaje o solo el médico puede hacerlo?"
+  },
+  {
+    id: 3,
+    color: "#E07B2A",
+    label: "Etapa 3 — CRÍTICA",
+    title: "Verificación de Seguro y Preautorización",
+    subtitle: "El cuello de botella principal del proceso actual",
+    badges: ["SAP", "ASEG"],
+    critical: true,
+    steps: [
+      { text: "Ejecutivo de cuenta identifica que el paciente tiene seguro", system: "SAP" },
+      { text: "Se consulta cobertura activa (portal web / llamada / correo a aseguradora)", system: "ASEG" },
+      { text: "Se obtiene confirmación de cobertura y beneficios", system: "ASEG" },
+      { text: "Se elabora solicitud de preautorización con diagnóstico", system: null },
+      { text: "Se envía solicitud a la aseguradora por el canal correspondiente", system: "ASEG" },
+      { text: "Se espera respuesta de la aseguradora (aprobación / rechazo / solicitud de info adicional)", system: "ASEG" },
+      { text: "Se informa al paciente sobre copago y condiciones de cobertura", system: null },
+      { text: "Se registra el número de autorización en SAP", system: "SAP" },
+    ],
+    systems: [
+      { icon: "🗄️", type: "sap", label: "SAP", desc: "Consulta de cobertura si hay integración. Registro del número de autorización." },
+      { icon: "🏛️", type: "aseg", label: "Aseguradora", desc: "Portal web, teléfono o correo. Sin integración en tiempo real actualmente." },
+      { icon: "📋", type: "manual", label: "Manual", desc: "Formulario físico o PDF de solicitud de preautorización, enviado por correo o portal." },
+    ],
+    friction: "Este proceso puede tomar de 20 minutos a 3+ horas dependiendo de la aseguradora y el canal. Es el mayor punto de fricción del flujo de urgencias.",
+    keyQuestion: "¿Cuánto tiempo promedio toma la preautorización con cada aseguradora? ¿Cuál es la más rápida y cuál la más lenta?"
+  },
+  {
+    id: 4,
+    color: "#1B2C4E",
+    label: "Etapa 4",
+    title: "Admisión al Servicio y Asignación",
+    subtitle: "Formalización del ingreso y asignación de cama o consultorio",
+    badges: ["SAP", "EMED"],
+    critical: false,
+    steps: [
+      { text: "Médico de urgencias evalúa y decide si el paciente es admitido", system: null },
+      { text: "Coordinador de admisiones recibe la indicación de admisión", system: null },
+      { text: "Se consulta disponibilidad de cama o consultorio en SAP", system: "SAP" },
+      { text: "Se asigna cama o área de atención", system: "SAP" },
+      { text: "Se registra la admisión formal en SAP (número de cuenta del paciente)", system: "SAP" },
+      { text: "Se actualiza el expediente en EMED con la admisión", system: "EMED" },
+      { text: "Se cobra copago al paciente (si aplica en este momento)", system: null },
+      { text: "Paciente es trasladado físicamente al área asignada", system: null },
+    ],
+    systems: [
+      { icon: "🗄️", type: "sap", label: "SAP", desc: "Disponibilidad de camas, registro formal de admisión, apertura de cuenta hospitalaria del paciente." },
+      { icon: "💊", type: "emed", label: "EMED", desc: "Actualización del expediente clínico con la admisión y asignación." },
+    ],
+    friction: "Si la disponibilidad de camas no está actualizada en SAP en tiempo real, la asignación puede generar demoras o errores.",
+    keyQuestion: "¿La disponibilidad de camas en SAP es en tiempo real o se actualiza manualmente? ¿Con qué frecuencia se actualiza?"
+  },
+  {
+    id: 5,
+    color: "#1B7A8F",
+    label: "Etapa 5",
+    title: "Atención Médica y Generación de Cargos",
+    subtitle: "Prestación del servicio y registro de consumos",
+    badges: ["EMED", "SAP"],
+    critical: false,
+    steps: [
+      { text: "Médico atiende al paciente y registra notas de evolución en EMED", system: "EMED" },
+      { text: "Médico ordena estudios de laboratorio e imágenes", system: "EMED" },
+      { text: "Laboratorio recibe, ejecuta y reporta resultados", system: null },
+      { text: "Resultados regresan al médico (EMED o físicamente)", system: "EMED" },
+      { text: "Farmacia recibe orden y despacha medicamentos", system: null },
+      { text: "Cargo de medicamentos registrado en cuenta SAP del paciente", system: "SAP" },
+      { text: "Cargo de laboratorio / imágenes registrado en SAP", system: "SAP" },
+      { text: "Honorarios médicos registrados en SAP", system: "SAP" },
+    ],
+    systems: [
+      { icon: "💊", type: "emed", label: "EMED", desc: "Notas médicas, evoluciones, órdenes de lab/imágenes, prescripciones." },
+      { icon: "🗄️", type: "sap", label: "SAP", desc: "Registro de todos los cargos: medicamentos, estudios, honorarios, insumos." },
+    ],
+    friction: "Los cargos de farmacia y laboratorio a veces se ingresan manualmente al final, no en tiempo real, lo que retrasa la consolidación de cuenta al alta.",
+    keyQuestion: "¿Los cargos de farmacia se reflejan automáticamente en SAP cuando se despachan, o se ingresan manualmente después?"
+  },
+  {
+    id: 6,
+    color: "#E07B2A",
+    label: "Etapa 6 — CRÍTICA",
+    title: "Alta Médica",
+    subtitle: "Inicio de la brecha entre alta médica y salida real del paciente",
+    badges: ["EMED"],
+    critical: true,
+    steps: [
+      { text: "Médico evalúa y decide dar de alta al paciente", system: null },
+      { text: "Médico registra el alta médica en EMED", system: "EMED" },
+      { text: "EMED notifica (¿automáticamente?) a administración del alta", system: "EMED" },
+      { text: "Administración recibe la notificación de alta", system: null },
+      { text: "Se genera documentación de alta (resumen de egreso, recetas, indicaciones)", system: "EMED" },
+    ],
+    systems: [
+      { icon: "💊", type: "emed", label: "EMED", desc: "Registro del alta médica, generación del resumen de egreso, recetas e indicaciones al paciente." },
+    ],
+    friction: "Si EMED no notifica automáticamente a SAP/administración, hay un tiempo muerto entre el alta médica y el inicio del proceso administrativo. Este es el inicio de la brecha.",
+    keyQuestion: "¿Cómo se entera el equipo de facturación de que el médico dio el alta? ¿Sistema automático, llamada, o el médico va físicamente?"
+  },
+  {
+    id: 7,
+    color: "#1B2C4E",
+    label: "Etapa 7",
+    title: "Alta Administrativa y Egreso",
+    subtitle: "Consolidación de cuenta y salida real del paciente — La Brecha",
+    badges: ["SAP", "ASEG"],
+    critical: false,
+    steps: [
+      { text: "Administración inicia consolidación de todos los cargos en SAP", system: "SAP" },
+      { text: "Se verifican y confirman cargos de farmacia en la cuenta", system: "SAP" },
+      { text: "Se verifican y confirman cargos de laboratorio / imágenes", system: "SAP" },
+      { text: "Se verifican y confirman honorarios médicos", system: "SAP" },
+      { text: "Se cierra y revisa la cuenta internamente", system: "SAP" },
+      { text: "Se presenta el estado de cuenta al paciente o a su familiar", system: null },
+      { text: "Paciente (o aseguradora) aprueba y firma el egreso", system: null },
+      { text: "Paciente abandona físicamente el hospital", system: null },
+      { text: "Reclamo enviado a la aseguradora (inmediato o en batch)", system: "ASEG" },
+    ],
+    systems: [
+      { icon: "🗄️", type: "sap", label: "SAP", desc: "Consolidación final de todos los cargos, cierre de cuenta hospitalaria, emisión del reclamo." },
+      { icon: "🏛️", type: "aseg", label: "Aseguradora", desc: "Envío del reclamo por servicios prestados. Portal o correo." },
+    ],
+    friction: "La brecha entre el alta médica (Etapa 6) y la salida real del paciente (este punto) puede llegar a 5+ horas. CareFlow propone reducirla a menos de 30 minutos.",
+    keyQuestion: "¿Cuánto tiempo toma consolidar la cuenta desde que llega el alta médica? ¿Cuál es el paso que más demora?"
+  }
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────
+const state = {
+  stages: {},
+  notes: {},
+  newSteps: {}
+};
+
+stages.forEach(s => {
+  state.stages[s.id] = 'pending';
+  state.notes[s.id] = '';
+  state.newSteps[s.id] = [];
+});
+
+// ── RENDER ────────────────────────────────────────────────────────────
+function render() {
+  const container = document.getElementById('flow-container');
+  container.innerHTML = '';
+
+  stages.forEach((stage, idx) => {
+    const card = document.createElement('div');
+    card.className = 'stage-card' + (stage.critical ? ' critical-stage' : '');
+    card.id = 'stage-' + stage.id;
+    if (state.stages[stage.id] !== 'pending') card.classList.add(state.stages[stage.id]);
+
+    const badgesHtml = stage.badges.map(b => {
+      const cls = b === 'SAP' ? 'badge-sap-lg' : b === 'EMED' ? 'badge-emed-lg' : b === 'ASEG' ? 'badge-aseg-lg' : '';
+      return `<span class="badge ${cls}">${b}</span>`;
+    }).join('');
+
+    const status = state.stages[stage.id];
+    const statusText = status === 'confirmed' ? '✓ Etapa confirmada por Hospiten' :
+                       status === 'modified'  ? '⚠ Etapa modificada — ver nota' : '';
+    const noteText = state.notes[stage.id] ? `<span class="status-ribbon-note">"${state.notes[stage.id]}"</span>` : '';
+
+    // Steps
+    let stepsHtml = stage.steps.map((step, si) => {
+      const sysCls = step.system === 'SAP' ? 'badge-sap' : step.system === 'EMED' ? 'badge-emed' : step.system === 'ASEG' ? 'badge-aseg' : '';
+      const sysLabel = step.system ? `<span class="step-system badge-mini ${sysCls}">${step.system}</span>` : '';
+      return `<li class="step-item" onclick="toggleStep(${stage.id}, ${si}, this)" title="Toque para marcar como confirmado">
+        <div class="step-num">${si + 1}</div>
+        <span class="step-text">${step.text}</span>
+        ${sysLabel}
+      </li>`;
+    }).join('');
+
+    // New steps
+    const newStepsHtml = state.newSteps[stage.id].map((ns, ni) => `
+      <li class="new-step-item">
+        <div class="step-num" style="background:var(--orange);color:white">${stage.steps.length + ni + 1}</div>
+        <span class="step-text">${ns}</span>
+        <span class="new-step-badge">NUEVO</span>
+      </li>
+    `).join('');
+
+    // Systems
+    const systemsHtml = stage.systems.map(sys => `
+      <div class="system-item">
+        <div class="system-icon ${sys.type}">${sys.icon}</div>
+        <div class="system-text"><strong>${sys.label}</strong> — ${sys.desc}</div>
+      </div>
+    `).join('');
+
+    card.innerHTML = `
+      <div class="stage-header" onclick="toggleStage(${stage.id})">
+        <div class="stage-number" style="background:${stage.color}">${stage.id}</div>
+        <div class="stage-header-content">
+          <div class="stage-title-group">
+            <div class="stage-label">${stage.label}</div>
+            <div class="stage-title">${stage.title}</div>
+            <div class="stage-subtitle">${stage.subtitle}</div>
+          </div>
+          <div class="stage-meta">
+            <div class="stage-badges">${badgesHtml}</div>
+            <div class="stage-expand-btn">▼</div>
+          </div>
+        </div>
+      </div>
+      <div class="status-ribbon">${statusText}${noteText}</div>
+      <div class="stage-body">
+        <div class="stage-body-inner">
+          <div class="steps-section">
+            <h4>Pasos del proceso (toque para confirmar individualmente)</h4>
+            <ul class="steps-list">${stepsHtml}${newStepsHtml}</ul>
+          </div>
+          <div>
+            <div class="systems-section">
+              <div class="systems-panel">
+                <h4>Sistemas tecnológicos involucrados</h4>
+                ${systemsHtml}
+              </div>
+            </div>
+            ${stage.friction ? `
+            <div class="friction-note" style="margin-top:12px">
+              <span class="fn-label">⚠ FRICCIÓN PROBABLE</span>
+              ${stage.friction}
+            </div>` : ''}
+            ${stage.keyQuestion ? `
+            <div class="key-question">
+              <span class="kq-label">❓ PREGUNTA CLAVE PARA MARINELA</span>
+              ${stage.keyQuestion}
+            </div>` : ''}
+          </div>
+        </div>
+        <div class="stage-actions">
+          <button class="btn-action btn-confirm ${status==='confirmed'?'active':''}" onclick="event.stopPropagation(); setStatus(${stage.id},'confirmed')">✓ Confirmar etapa</button>
+          <button class="btn-action btn-modify ${status==='modified'?'active':''}" onclick="event.stopPropagation(); setStatus(${stage.id},'modified')">✎ Modificar / Corregir</button>
+          <button class="btn-action btn-add-step" onclick="event.stopPropagation(); toggleAddStep(${stage.id})">+ Agregar paso faltante</button>
+          <button class="btn-action btn-note" onclick="event.stopPropagation(); toggleNote(${stage.id})">✍ Agregar nota</button>
+        </div>
+        <div class="note-area" id="note-area-${stage.id}">
+          <textarea class="note-input" id="note-input-${stage.id}" placeholder="Escriba aquí la corrección, diferencia o nota capturada durante la sesión con Marinela…">${state.notes[stage.id]}</textarea>
+          <button class="btn-save-note" onclick="saveNote(${stage.id})">Guardar</button>
+        </div>
+        <div class="add-step-area" id="add-step-area-${stage.id}">
+          <input type="text" class="add-step-input" id="add-step-input-${stage.id}" placeholder="Describa el paso faltante que identificó con Marinela…" />
+          <button class="btn-save-step" onclick="saveNewStep(${stage.id})">+ Agregar</button>
+        </div>
+      </div>
+    `;
+
+    container.appendChild(card);
+
+    if (idx < stages.length - 1) {
+      const conn = document.createElement('div');
+      conn.className = 'flow-connector';
+      conn.innerHTML = '<div class="flow-connector-arrow">↓</div>';
+      container.appendChild(conn);
+    }
+  });
+
+  updateStatusBar();
+  updateSummaryPanel();
+}
+
+// ── INTERACTIONS ──────────────────────────────────────────────────────
+function toggleStage(id) {
+  const card = document.getElementById('stage-' + id);
+  card.classList.toggle('open');
+}
+
+function toggleStep(stageId, stepIdx, el) {
+  el.classList.toggle('step-confirmed');
+}
+
+function setStatus(id, status) {
+  if (state.stages[id] === status) {
+    state.stages[id] = 'pending';
+    showToast('Estado reiniciado', 'default');
+  } else {
+    state.stages[id] = status;
+    if (status === 'modified') {
+      setTimeout(() => {
+        document.getElementById('note-area-' + id).classList.add('visible');
+        document.getElementById('note-input-' + id).focus();
+      }, 100);
+    }
+    showToast(status === 'confirmed' ? '✓ Etapa confirmada' : '⚠ Marcada para modificación', status === 'confirmed' ? 'success' : 'warning');
+  }
+  render();
+  // Re-open if was open
+  const card = document.getElementById('stage-' + id);
+  if (card) {
+    setTimeout(() => {
+      card.classList.add('open');
+      if (status === 'modified') {
+        document.getElementById('note-area-' + id).classList.add('visible');
+      }
+    }, 50);
+  }
+}
+
+function toggleNote(id) {
+  const area = document.getElementById('note-area-' + id);
+  area.classList.toggle('visible');
+  if (area.classList.contains('visible')) document.getElementById('note-input-' + id).focus();
+}
+
+function saveNote(id) {
+  const val = document.getElementById('note-input-' + id).value.trim();
+  state.notes[id] = val;
+  document.getElementById('note-area-' + id).classList.remove('visible');
+  updateSummaryPanel();
+  showToast('✓ Nota guardada', 'success');
+}
+
+function toggleAddStep(id) {
+  const area = document.getElementById('add-step-area-' + id);
+  area.classList.toggle('visible');
+  if (area.classList.contains('visible')) document.getElementById('add-step-input-' + id).focus();
+}
+
+function saveNewStep(id) {
+  const input = document.getElementById('add-step-input-' + id);
+  const val = input.value.trim();
+  if (!val) return;
+  state.newSteps[id].push(val);
+  input.value = '';
+  document.getElementById('add-step-area-' + id).classList.remove('visible');
+  render();
+  const card = document.getElementById('stage-' + id);
+  if (card) { setTimeout(() => card.classList.add('open'), 50); }
+  showToast('✓ Paso nuevo agregado', 'success');
+}
+
+// ── STATUS UPDATES ────────────────────────────────────────────────────
+function updateStatusBar() {
+  const counts = Object.values(state.stages);
+  const confirmed = counts.filter(s => s === 'confirmed').length;
+  const modified  = counts.filter(s => s === 'modified').length;
+  const newSteps  = Object.values(state.newSteps).reduce((acc, arr) => acc + arr.length, 0);
+  document.getElementById('confirmed-count').textContent = confirmed;
+  document.getElementById('modified-count').textContent  = modified;
+  document.getElementById('new-steps-count').textContent = newSteps;
+}
+
+function updateSummaryPanel() {
+  const counts = Object.values(state.stages);
+  const confirmed = counts.filter(s => s === 'confirmed').length;
+  const modified  = counts.filter(s => s === 'modified').length;
+  const pending   = counts.filter(s => s === 'pending').length;
+  const newSteps  = Object.values(state.newSteps).reduce((acc, arr) => acc + arr.length, 0);
+  document.getElementById('s-confirmed').textContent = confirmed;
+  document.getElementById('s-modified').textContent  = modified;
+  document.getElementById('s-pending').textContent   = pending;
+  document.getElementById('s-new-steps').textContent = newSteps;
+
+  // Notes output
+  const notesEl = document.getElementById('notes-output');
+  const allNotes = [];
+  stages.forEach(s => {
+    if (state.notes[s.id]) allNotes.push({ stage: s.id, title: s.title, note: state.notes[s.id] });
+    if (state.newSteps[s.id].length > 0) state.newSteps[s.id].forEach(ns => allNotes.push({ stage: s.id, title: s.title, note: `[PASO NUEVO]: ${ns}` }));
+  });
+  if (allNotes.length === 0) {
+    notesEl.innerHTML = '<p class="no-notes">Las notas aparecerán aquí conforme se vayan capturando durante la sesión.</p>';
+  } else {
+    notesEl.innerHTML = allNotes.map(n => `<p><span class="note-tag"><span class="note-tag-stage">E${n.stage}</span>${n.title}</span> — ${n.note}</p>`).join('');
+  }
+}
+
+// ── EXPORT MODAL ──────────────────────────────────────────────────────
+function openExport() {
+  const content = document.getElementById('modal-content');
+  let html = '';
+
+  const confirmed = Object.values(state.stages).filter(s => s === 'confirmed').length;
+  const modified  = Object.values(state.stages).filter(s => s === 'modified').length;
+  const pending   = Object.values(state.stages).filter(s => s === 'pending').length;
+  const newSteps  = Object.values(state.newSteps).reduce((acc, arr) => acc + arr.length, 0);
+
+  html += `<div class="modal-section">
+    <h3>Estado General</h3>
+    <div class="modal-row"><span class="modal-row-label">Hospital</span><span class="modal-row-value">Hospiten Paitilla</span></div>
+    <div class="modal-row"><span class="modal-row-label">Sesión</span><span class="modal-row-value">Sesión 1 — Urgencias</span></div>
+    <div class="modal-row"><span class="modal-row-label">Etapas totales</span><span class="modal-row-value">7</span></div>
+    <div class="modal-row"><span class="modal-row-label">Etapas confirmadas</span><span class="modal-row-value modal-status confirmed">${confirmed} ✓</span></div>
+    <div class="modal-row"><span class="modal-row-label">Etapas modificadas</span><span class="modal-row-value modal-status modified">${modified}</span></div>
+    <div class="modal-row"><span class="modal-row-label">Pendientes de validar</span><span class="modal-row-value modal-status pending">${pending}</span></div>
+    <div class="modal-row"><span class="modal-row-label">Pasos nuevos identificados</span><span class="modal-row-value modal-status modified">${newSteps}</span></div>
+  </div>`;
+
+  html += `<div class="modal-section"><h3>Detalle por Etapa</h3>`;
+  stages.forEach(s => {
+    const status = state.stages[s.id];
+    const statusLabel = status === 'confirmed' ? '✓ Confirmado' : status === 'modified' ? '⚠ Modificado' : '— Pendiente';
+    const statusCls = status === 'confirmed' ? 'confirmed' : status === 'modified' ? 'modified' : 'pending';
+    html += `<div class="modal-row">
+      <span class="modal-row-label">E${s.id}. ${s.title}</span>
+      <span class="modal-row-value modal-status ${statusCls}">${statusLabel}</span>
+    </div>`;
+    if (state.notes[s.id]) html += `<div class="modal-note-box">📝 ${state.notes[s.id]}</div>`;
+    if (state.newSteps[s.id].length) state.newSteps[s.id].forEach(ns => { html += `<div class="modal-note-box" style="background:#FFF4E5">➕ Paso nuevo: ${ns}</div>`; });
+  });
+  html += `</div>`;
+
+  content.innerHTML = html;
+  document.getElementById('modal').classList.add('visible');
+}
+
+function closeExport() { document.getElementById('modal').classList.remove('visible'); }
+function closeExportOutside(e) { if (e.target === document.getElementById('modal')) closeExport(); }
+
+// ── RESET ──────────────────────────────────────────────────────────────
+function resetAll() {
+  if (!confirm('¿Reiniciar todo el estado de validación? Se perderán todas las notas y marcas.')) return;
+  stages.forEach(s => { state.stages[s.id] = 'pending'; state.notes[s.id] = ''; state.newSteps[s.id] = []; });
+  render();
+  showToast('Estado reiniciado', 'default');
+}
+
+// ── TOAST ──────────────────────────────────────────────────────────────
+function showToast(msg, type = 'default') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type === 'success' ? ' success' : type === 'warning' ? ' warning' : '');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────
+render();
+// Auto-open first stage on load
+setTimeout(() => {
+  const first = document.getElementById('stage-1');
+  if (first) first.classList.add('open');
+}, 300);
+</script>
 </body>
 </html>
