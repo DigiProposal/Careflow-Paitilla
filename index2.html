@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mapa AS-IS — Hospitalización | CareFlow × Hospiten Paitilla</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy:   #1B2C4E;
+    --navy2:  #243762;
+    --teal:   #1B7A8F;
+    --teal2:  #15697B;
+    --orange: #E07B2A;
+    --orange2:#C96B20;
+    --green:  #27AE60;
+    --red:    #E74C3C;
+    --purple: #7B5EA7;
+    --lgray:  #F4F7FB;
+    --mgray:  #DDE3EE;
+    --dgray:  #8896AA;
+    --text:   #1A2332;
+    --white:  #FFFFFF;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--lgray); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+  /* HEADER */
+  .header { background: var(--navy); padding: 16px 28px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 20px rgba(0,0,0,0.25); }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .logo-badge { background: var(--teal); color: white; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; padding: 4px 11px; border-radius: 4px; text-transform: uppercase; }
+  .session-badge { background: var(--orange); color: white; font-size: 11px; font-weight: 700; letter-spacing: 1px; padding: 4px 10px; border-radius: 4px; }
+  .header h1 { color: white; font-size: 15px; font-weight: 500; }
+  .header h1 span { color: var(--teal); font-weight: 700; }
+  .header-right { display: flex; align-items: center; gap: 8px; }
+  .btn-export { background: var(--orange); color: white; border: none; padding: 7px 16px; border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+  .btn-export:hover { background: var(--orange2); }
+  .btn-reset { background: transparent; color: var(--dgray); border: 1px solid rgba(255,255,255,0.15); padding: 7px 14px; border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+  .btn-reset:hover { border-color: white; color: white; }
+
+  /* LEGEND */
+  .legend-bar { background: white; border-bottom: 1px solid var(--mgray); padding: 9px 28px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .legend-bar span { font-size: 12px; color: var(--dgray); font-weight: 600; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text); }
+  .legend-dot { width: 9px; height: 9px; border-radius: 50%; }
+  .badge-mini { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 3px; letter-spacing: 0.5px; font-family: 'DM Mono', monospace; }
+  .bs { background: #D6EEF4; color: var(--teal); }
+  .be { background: #FDEBD0; color: var(--orange); }
+  .bm { background: #F0F0F8; color: #555; }
+
+  /* NOTE: EMED clarification banner */
+  .emed-note { background: #FFF8F0; border-left: 4px solid var(--orange); padding: 10px 18px; display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--text); }
+  .emed-note strong { color: var(--orange); }
+
+  /* STATUS BAR */
+  .status-bar { background: var(--navy2); color: white; padding: 7px 28px; display: flex; gap: 28px; font-size: 12px; flex-wrap: wrap; }
+  .status-item { display: flex; align-items: center; gap: 7px; opacity: 0.8; }
+  .sc { font-weight: 700; font-size: 15px; opacity: 1; color: #4ADE80; }
+  .sm { font-weight: 700; font-size: 15px; opacity: 1; color: var(--orange); }
+  .sn { font-weight: 700; font-size: 15px; opacity: 1; color: var(--teal); }
+
+  /* MAIN */
+  .main { padding: 24px 20px 60px; max-width: 1100px; margin: 0 auto; }
+
+  /* INTRO */
+  .intro-card { background: white; border: 1px solid var(--mgray); border-left: 4px solid var(--navy); border-radius: 8px; padding: 14px 20px; margin-bottom: 24px; display: flex; gap: 14px; align-items: flex-start; }
+  .intro-icon { width: 34px; height: 34px; min-width: 34px; background: var(--navy); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 17px; }
+  .intro-card h2 { font-size: 14px; font-weight: 700; color: var(--navy); margin-bottom: 3px; }
+  .intro-card p { font-size: 12px; color: var(--dgray); line-height: 1.5; }
+  .intro-card strong { color: var(--navy); }
+
+  /* STAGE CARD */
+  .stage-card { background: white; border: 2px solid var(--mgray); border-radius: 12px; overflow: hidden; transition: border-color 0.2s, box-shadow 0.2s; margin-bottom: 0; }
+  .stage-card:hover { box-shadow: 0 4px 20px rgba(27,44,78,0.09); }
+  .stage-card.confirmed { border-color: var(--green); }
+  .stage-card.modified  { border-color: var(--orange); }
+
+  .stage-header { display: flex; align-items: stretch; cursor: pointer; user-select: none; }
+  .stage-number { width: 54px; min-width: 54px; display: flex; align-items: center; justify-content: center; font-size: 21px; font-weight: 700; color: white; font-family: 'DM Mono', monospace; }
+  .stage-header-content { flex: 1; padding: 13px 16px 13px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .stage-label { font-size: 10px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: var(--dgray); margin-bottom: 2px; }
+  .stage-title { font-size: 15px; font-weight: 700; color: var(--navy); line-height: 1.2; }
+  .stage-subtitle { font-size: 12px; color: var(--dgray); margin-top: 2px; font-style: italic; }
+  .stage-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+  .stage-badges { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+  .badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; letter-spacing: 0.4px; font-family: 'DM Mono', monospace; white-space: nowrap; }
+  .badge-sap  { background: #D6EEF4; color: var(--teal); }
+  .badge-emed { background: #FDEBD0; color: var(--orange); }
+  .badge-aseg { background: #EDE7F6; color: var(--purple); }
+  .badge-crit { background: #FDEDED; color: var(--red); }
+  .stage-expand-btn { width: 26px; height: 26px; border-radius: 50%; background: var(--lgray); display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--dgray); transition: transform 0.25s, background 0.2s; flex-shrink: 0; align-self: center; }
+  .stage-card.open .stage-expand-btn { transform: rotate(180deg); background: var(--mgray); }
+
+  /* status ribbon */
+  .status-ribbon { display: none; align-items: center; gap: 7px; padding: 5px 16px 5px 68px; font-size: 12px; font-weight: 600; }
+  .stage-card.confirmed .status-ribbon { display: flex; background: #F0FBF4; color: var(--green); }
+  .stage-card.modified  .status-ribbon { display: flex; background: #FFF8F0; color: var(--orange); }
+  .status-note { font-weight: 400; color: var(--dgray); font-style: italic; margin-left: 6px; }
+
+  /* BODY */
+  .stage-body { display: none; border-top: 1px solid var(--mgray); animation: sd 0.2s ease; }
+  .stage-card.open .stage-body { display: block; }
+  @keyframes sd { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+
+  .stage-body-inner { padding: 18px 18px 18px 68px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+
+  /* steps */
+  .section-label { font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--dgray); margin-bottom: 8px; }
+  .steps-list { list-style: none; }
+  .step-item { display: flex; align-items: flex-start; gap: 9px; padding: 7px 5px; border-bottom: 1px dashed var(--mgray); cursor: pointer; border-radius: 4px; margin: 0 -5px; transition: background 0.15s; }
+  .step-item:hover { background: var(--lgray); }
+  .step-item:last-child { border-bottom: none; }
+  .step-num { width: 19px; height: 19px; min-width: 19px; border-radius: 50%; background: var(--mgray); color: var(--navy); font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; font-family: 'DM Mono', monospace; transition: all 0.2s; }
+  .step-item.step-ok .step-num { background: var(--green); color: white; }
+  .step-text { font-size: 12px; color: var(--text); line-height: 1.4; flex: 1; }
+  .step-sys { font-size: 10px; font-family: 'DM Mono', monospace; font-weight: 700; padding: 2px 5px; border-radius: 3px; white-space: nowrap; align-self: center; }
+
+  /* right panel */
+  .right-panel { display: flex; flex-direction: column; gap: 10px; }
+  .systems-box { background: var(--lgray); border-radius: 8px; padding: 12px 14px; }
+  .sys-item { display: flex; align-items: flex-start; gap: 9px; margin-bottom: 9px; }
+  .sys-item:last-child { margin-bottom: 0; }
+  .sys-icon { font-size: 15px; width: 26px; height: 26px; min-width: 26px; border-radius: 5px; display: flex; align-items: center; justify-content: center; }
+  .sys-icon.sap    { background: #D6EEF4; }
+  .sys-icon.emed   { background: #FDEBD0; }
+  .sys-icon.aseg   { background: #EDE7F6; }
+  .sys-icon.manual { background: #F0F0F0; }
+  .sys-text { font-size: 12px; line-height: 1.4; }
+  .sys-text strong { color: var(--navy); font-weight: 700; }
+
+  .friction-note { background: #FFF8F0; border-left: 3px solid var(--orange); border-radius: 0 6px 6px 0; padding: 9px 12px; font-size: 12px; line-height: 1.5; }
+  .fn-label { font-weight: 700; color: var(--orange); font-size: 11px; letter-spacing: 0.4px; display: block; margin-bottom: 3px; }
+  .key-q { background: #EDF6FA; border-left: 3px solid var(--teal); border-radius: 0 6px 6px 0; padding: 9px 12px; font-size: 12px; line-height: 1.5; }
+  .kq-label { font-weight: 700; color: var(--teal); font-size: 11px; letter-spacing: 0.4px; display: block; margin-bottom: 3px; }
+
+  /* actions */
+  .stage-actions { display: flex; gap: 7px; padding: 10px 18px 14px 68px; border-top: 1px solid var(--mgray); background: var(--lgray); flex-wrap: wrap; }
+  .btn-action { padding: 6px 13px; border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; display: flex; align-items: center; gap: 4px; }
+  .btn-confirm { background: white; border-color: var(--green); color: var(--green); }
+  .btn-confirm:hover, .btn-confirm.active { background: var(--green); color: white; }
+  .btn-modify  { background: white; border-color: var(--orange); color: var(--orange); }
+  .btn-modify:hover, .btn-modify.active  { background: var(--orange); color: white; }
+  .btn-add     { background: white; border-color: var(--navy); color: var(--navy); }
+  .btn-add:hover { background: var(--navy); color: white; }
+  .btn-note    { background: white; border-color: var(--dgray); color: var(--dgray); }
+  .btn-note:hover { background: var(--dgray); color: white; }
+
+  /* note & add-step areas */
+  .note-area, .add-area { display: none; padding: 0 18px 14px 68px; background: var(--lgray); gap: 7px; align-items: flex-start; }
+  .note-area.vis, .add-area.vis { display: flex; }
+  .note-input { flex: 1; border: 2px solid var(--mgray); border-radius: 6px; padding: 8px 11px; font-family: 'DM Sans', sans-serif; font-size: 13px; background: white; color: var(--text); resize: none; height: 58px; }
+  .note-input:focus { outline: none; border-color: var(--teal); }
+  .add-input { flex: 1; border: 2px solid var(--navy); border-radius: 6px; padding: 8px 11px; font-family: 'DM Sans', sans-serif; font-size: 13px; background: white; color: var(--text); }
+  .add-input:focus { outline: none; }
+  .btn-save { background: var(--teal); color: white; border: none; padding: 8px 13px; border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .btn-save:hover { background: var(--teal2); }
+  .btn-save-add { background: var(--navy); color: white; border: none; padding: 9px 13px; border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+
+  /* new step */
+  .new-step { display: flex; align-items: flex-start; gap: 9px; padding: 7px 5px; margin: 0 -5px; background: #FFF4E5; border-radius: 4px; border-bottom: 1px dashed var(--mgray); }
+  .new-badge { font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 3px; background: var(--orange); color: white; letter-spacing: 0.4px; align-self: center; white-space: nowrap; }
+
+  /* connector */
+  .connector { display: flex; align-items: center; justify-content: center; height: 28px; position: relative; }
+  .connector::before { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: var(--mgray); transform: translateX(-50%); }
+  .conn-arrow { background: white; border: 2px solid var(--mgray); border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--dgray); position: relative; z-index: 2; }
+
+  /* SUMMARY */
+  .summary { background: var(--navy); border-radius: 12px; padding: 22px 26px; margin-top: 28px; }
+  .sum-title { font-size: 12px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--teal); margin-bottom: 14px; }
+  .sum-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
+  .sum-stat { background: rgba(255,255,255,0.07); border-radius: 8px; padding: 12px 14px; }
+  .sum-num { font-size: 30px; font-weight: 700; font-family: 'DM Mono', monospace; line-height: 1; margin-bottom: 3px; }
+  .sum-lbl { font-size: 11px; color: rgba(255,255,255,0.5); }
+  .sum-notes { background: rgba(255,255,255,0.05); border-radius: 8px; padding: 12px 14px; }
+  .sum-notes-title { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,0.35); margin-bottom: 8px; }
+  #notes-out { font-size: 12px; line-height: 1.7; color: rgba(255,255,255,0.75); }
+  #notes-out p { padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .no-notes { color: rgba(255,255,255,0.3); font-style: italic; font-size: 12px; }
+  .ntag { display: inline-flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.1); border-radius: 20px; padding: 3px 10px; font-size: 11px; }
+  .ntag-s { color: var(--teal); font-weight: 700; font-size: 10px; }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay.vis { display: flex; }
+  .modal-box { background: white; border-radius: 12px; padding: 28px; width: min(540px, 92vw); max-height: 80vh; overflow-y: auto; }
+  .modal-box h2 { font-size: 17px; font-weight: 700; color: var(--navy); margin-bottom: 5px; }
+  .modal-box p { font-size: 13px; color: var(--dgray); margin-bottom: 18px; line-height: 1.5; }
+  .msec h3 { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--teal); margin-bottom: 7px; margin-top: 16px; }
+  .mrow { display: flex; justify-content: space-between; align-items: flex-start; padding: 7px 0; border-bottom: 1px solid var(--mgray); font-size: 13px; gap: 10px; }
+  .mrow:last-child { border-bottom: none; }
+  .mrl { font-weight: 600; color: var(--navy); min-width: 150px; }
+  .mrv { color: var(--dgray); text-align: right; flex: 1; }
+  .ms-confirmed { color: var(--green); font-weight: 700; }
+  .ms-modified  { color: var(--orange); font-weight: 700; }
+  .ms-pending   { color: var(--dgray); }
+  .mnote { background: var(--lgray); border-radius: 5px; padding: 8px 12px; font-size: 12px; font-style: italic; margin-top: 3px; }
+  .mbtns { display: flex; gap: 8px; margin-top: 20px; }
+  .btn-print { background: var(--navy); color: white; border: none; padding: 9px 20px; border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; flex: 1; }
+  .btn-close { background: white; color: var(--navy); border: 2px solid var(--mgray); padding: 9px 20px; border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 20px; right: 20px; background: var(--navy); color: white; padding: 11px 18px; border-radius: 8px; font-size: 13px; font-weight: 500; z-index: 300; opacity: 0; transform: translateY(8px); transition: all 0.3s; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.ok  { background: var(--green); }
+  .toast.warn { background: var(--orange); }
+
+  @media (max-width: 680px) {
+    .stage-body-inner { grid-template-columns: 1fr; }
+    .sum-grid { grid-template-columns: repeat(2,1fr); }
+    .stage-body-inner, .stage-actions, .note-area, .add-area { padding-left: 14px; }
+    .status-ribbon { padding-left: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo-badge">CareFlow</div>
+    <div class="session-badge">Sesión 2</div>
+    <h1><span>Mapa AS-IS</span> · Proceso de Hospitalización · Hospiten Paitilla</h1>
+  </div>
+  <div class="header-right">
+    <button class="btn-reset" onclick="resetAll()">↺ Reiniciar</button>
+    <button class="btn-export" onclick="openModal()">📋 Ver Resumen</button>
+  </div>
+</div>
+
+<div class="legend-bar">
+  <span>SISTEMAS:</span>
+  <div class="legend-item"><span class="badge-mini bs">SAP</span> Todo el equipo operativo</div>
+  <div class="legend-item"><span class="badge-mini be">EMED</span> Solo médicos especialistas</div>
+  <div class="legend-item"><span class="badge-mini" style="background:#EDE7F6;color:#7B5EA7">ASEG</span> Aseguradora</div>
+  <span style="margin-left:6px">VALIDACIÓN:</span>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div> Confirmado</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div> Modificado</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--mgray)"></div> Pendiente</div>
+</div>
+
+<div class="emed-note">
+  <span>⚠️</span>
+  <div><strong>Hallazgo clave del levantamiento:</strong> EMED es únicamente utilizado por los <strong>médicos especialistas</strong> para registrar sus consultas e interconsultas. <strong>Todo el equipo operativo del hospital trabaja directamente en SAP</strong> — admisiones, enfermería de piso, facturación y coordinación de camas.</div>
+</div>
+
+<div class="status-bar">
+  <div class="status-item">Etapas: <span class="sn" id="total">9</span></div>
+  <div class="status-item">Confirmadas: <span class="sc" id="cnt-c">0</span></div>
+  <div class="status-item">Modificadas: <span class="sm" id="cnt-m">0</span></div>
+  <div class="status-item">Pasos nuevos: <span class="sm" id="cnt-n">0</span></div>
+</div>
+
+<div class="main">
+
+<div class="intro-card">
+  <div class="intro-icon">🏥</div>
+  <div>
+    <h2>Validación del Proceso de Hospitalización — Sesión 2</h2>
+    <p>Este mapa cubre el flujo completo desde que el médico de urgencias <strong>decide hospitalizar al paciente</strong> hasta su <strong>egreso definitivo</strong>. Valide con Marinela cada etapa: confirme los pasos correctos, corrija los que sean diferentes, y agregue cualquier paso o actor que no esté contemplado.</p>
+  </div>
+</div>
+
+<div id="flow"></div>
+
+<div class="summary">
+  <div class="sum-title">📊 Resumen de Validación en Tiempo Real</div>
+  <div class="sum-grid">
+    <div class="sum-stat"><div class="sum-num" id="s-c" style="color:#4ADE80">0</div><div class="sum-lbl">Confirmadas</div></div>
+    <div class="sum-stat"><div class="sum-num" id="s-m" style="color:var(--orange)">0</div><div class="sum-lbl">Modificadas</div></div>
+    <div class="sum-stat"><div class="sum-num" id="s-p" style="color:var(--dgray)">9</div><div class="sum-lbl">Pendientes</div></div>
+    <div class="sum-stat"><div class="sum-num" id="s-n" style="color:var(--orange)">0</div><div class="sum-lbl">Pasos nuevos</div></div>
+  </div>
+  <div class="sum-notes">
+    <div class="sum-notes-title">Notas y modificaciones capturadas</div>
+    <div id="notes-out"><p class="no-notes">Las notas aparecerán aquí conforme se capturen durante la sesión.</p></div>
+  </div>
+</div>
+
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal" onclick="closeModalOut(event)">
+  <div class="modal-box">
+    <h2>Resumen de Validación</h2>
+    <p>Estado del mapa de hospitalización según la sesión de campo con Hospiten Paitilla.</p>
+    <div id="modal-content"></div>
+    <div class="mbtns">
+      <button class="btn-print" onclick="window.print()">🖨 Imprimir / PDF</button>
+      <button class="btn-close" onclick="closeModal()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STAGES = [
+  {
+    id: 1, color: "#1B2C4E",
+    label: "Etapa 1",
+    title: "Decisión de Hospitalización",
+    subtitle: "El médico determina que el paciente no puede ser dado de alta desde urgencias",
+    badges: ["SAP", "EMED"],
+    steps: [
+      { t: "Médico urgenciólogo evalúa la evolución clínica del paciente", sys: null },
+      { t: "Se solicita interconsulta a médico especialista (si aplica)", sys: "SAP" },
+      { t: "Especialista acude a urgencias y evalúa al paciente", sys: null },
+      { t: "Especialista registra su interconsulta y criterio de hospitalización en EMED", sys: "EMED" },
+      { t: "Médico tratante firma la orden de hospitalización", sys: null },
+      { t: "Se notifica a admisiones / coordinación de camas la necesidad de hospitalizar", sys: "SAP" },
+    ],
+    systems: [
+      { icon: "💊", type: "emed", label: "EMED", desc: "Usado SOLO por el especialista para registrar la interconsulta y la indicación de hospitalización." },
+      { icon: "🗄️", type: "sap", label: "SAP", desc: "Solicitud de interconsulta, notificación a admisiones, actualización del estado del paciente." },
+    ],
+    friction: "Si el especialista tarda en llegar a urgencias o en registrar en EMED, el proceso de búsqueda de cama se retrasa porque admisiones espera la confirmación formal.",
+    kq: "¿La orden de hospitalización se genera en EMED, en SAP o en papel físico? ¿Quién puede iniciar la búsqueda de cama — admisiones o solo el médico?"
+  },
+  {
+    id: 2, color: "#1B7A8F",
+    label: "Etapa 2",
+    title: "Búsqueda y Asignación de Cama",
+    subtitle: "Coordinación de disponibilidad y asignación de habitación en el piso correspondiente",
+    badges: ["SAP"],
+    steps: [
+      { t: "Admisiones recibe la solicitud de cama con el tipo de habitación requerida", sys: "SAP" },
+      { t: "Se consulta disponibilidad de camas en SAP por piso y tipo", sys: "SAP" },
+      { t: "Se identifica cama disponible (simple, doble, UCI, etc.)", sys: "SAP" },
+      { t: "Se verifica que la cobertura del seguro aplica para el tipo de habitación solicitada", sys: "SAP" },
+      { t: "Se asigna la cama al paciente en SAP", sys: "SAP" },
+      { t: "Se notifica al piso / enfermería sobre el ingreso del nuevo paciente", sys: "SAP" },
+      { t: "Enfermería de piso prepara la habitación", sys: null },
+    ],
+    systems: [
+      { icon: "🗄️", type: "sap", label: "SAP", desc: "Toda la gestión de camas y disponibilidad corre en SAP. No hay intervención de EMED en esta etapa." },
+    ],
+    friction: "Si la disponibilidad de camas en SAP no está actualizada en tiempo real, se asignan camas que ya están ocupadas o en mantenimiento, generando reprocesos.",
+    kq: "¿El mapa de camas en SAP se actualiza automáticamente o alguien lo actualiza manualmente? ¿Con qué frecuencia? ¿Existe un 'censo de camas' en tiempo real?"
+  },
+  {
+    id: 3, color: "#E07B2A",
+    label: "Etapa 3 — CRÍTICA",
+    title: "Preautorización de Hospitalización con Aseguradora",
+    subtitle: "Notificación y autorización del ingreso hospitalario ante la aseguradora",
+    badges: ["SAP", "ASEG"],
+    steps: [
+      { t: "Ejecutivo de cuenta prepara la solicitud de preautorización de hospitalización", sys: "SAP" },
+      { t: "Se notifica a la aseguradora el diagnóstico de ingreso y el tipo de habitación", sys: "ASEG" },
+      { t: "Se envía la solicitud por el canal correspondiente (portal, correo, teléfono)", sys: "ASEG" },
+      { t: "Aseguradora responde con autorización, número de caso y tope de cobertura", sys: "ASEG" },
+      { t: "Se registra el número de autorización de hospitalización en SAP", sys: "SAP" },
+      { t: "Se informa al paciente / familiar sobre copago y condiciones de cobertura para la estancia", sys: null },
+      { t: "Se cobra anticipo o copago si la póliza lo requiere", sys: "SAP" },
+    ],
+    systems: [
+      { icon: "🗄️", type: "sap", label: "SAP", desc: "Registro de la autorización, cobro de anticipos, vinculación del número de caso con la cuenta del paciente." },
+      { icon: "🏛️", type: "aseg", label: "Aseguradora", desc: "Portal web, correo o teléfono. Actualmente sin integración en tiempo real." },
+    ],
+    friction: "La autorización de hospitalización puede tomar de 1 a 4+ horas dependiendo de la aseguradora. Mientras se espera, el paciente permanece en urgencias ocupando una camilla.",
+    kq: "¿La preautorización de hospitalización es un proceso separado al de urgencias o continúa desde la misma autorización? ¿Cuánto tarda en promedio por aseguradora?"
+  },
+  {
+    id: 4, color: "#1B2C4E",
+    label: "Etapa 4",
+    title: "Traslado del Paciente al Piso",
+    subtitle: "Movimiento físico de urgencias a la habitación asignada",
+    badges: ["SAP"],
+    steps: [
+      { t: "Camillero / transportador recibe la orden de traslado", sys: "SAP" },
+      { t: "Se prepara al paciente para el traslado (medicamentos, IV, registros)", sys: null },
+      { t: "Enfermera de urgencias hace entrega formal del paciente (traspaso clínico)", sys: null },
+      { t: "Traslado físico al piso / habitación asignada", sys: null },
+      { t: "Enfermera de piso recibe al paciente y verifica la identidad y la orden", sys: null },
+      { t: "Se actualiza el estado del paciente en SAP: de 'urgencias' a 'hospitalizado'", sys: "SAP" },
+      { t: "Enfermera de piso realiza la valoración inicial de ingreso", sys: null },
+    ],
+    systems: [
+      { icon: "🗄️", type: "sap", label: "SAP", desc: "Cambio de estado del paciente, registro del ingreso al piso, hora de traslado." },
+      { icon: "📋", type: "manual", label: "Manual", desc: "Traspaso clínico verbal o en papel entre enfermería de urgencias y enfermería de piso." },
+    ],
+    friction: "El traspaso clínico entre urgencias y piso puede ser verbal sin registro formal, generando pérdida de información sobre medicamentos activos o indicaciones del médico.",
+    kq: "¿El traspaso entre urgencias y piso se hace en SAP, en EMED o verbalmente? ¿Hay un protocolo formal de entrega del paciente?"
+  },
+  {
+    id: 5, color: "#1B7A8F",
+    label: "Etapa 5",
+    title: "Gestión de la Estancia Hospitalaria",
+    subtitle: "Evolución médica diaria, interconsultas y acumulación de cargos",
+    badges: ["SAP", "EMED"],
+    steps: [
+      { t: "Médico tratante realiza visita diaria y registra evolución en EMED", sys: "EMED" },
+      { t: "Médico ordena estudios, medicamentos y procedimientos del día", sys: "EMED" },
+      { t: "Enfermería ejecuta las indicaciones médicas y las registra en SAP", sys: "SAP" },
+      { t: "Farmacia recibe las órdenes y despacha medicamentos al piso", sys: "SAP" },
+      { t: "Cargos de medicamentos se registran en la cuenta del paciente en SAP", sys: "SAP" },
+      { t: "Laboratorio e imágenes reciben órdenes, ejecutan y reportan resultados", sys: "EMED" },
+      { t: "Especialistas realizan interconsultas y registran notas en EMED", sys: "EMED" },
+      { t: "Honorarios médicos de cada especialista se cargan en SAP", sys: "SAP" },
+      { t: "Se realizan auditorías concurrentes con la aseguradora (si aplica)", sys: "ASEG" },
+      { t: "Se envían reportes de evolución a la aseguradora para renovación de autorización", sys: "ASEG" },
+    ],
+    systems: [
+      { icon: "💊", type: "emed", label: "EMED", desc: "SOLO médicos especialistas: evoluciones diarias, órdenes médicas, notas de interconsulta, resultados de lab." },
+      { icon: "🗄️", type: "sap", label: "SAP", desc: "Enfermería, farmacia, laboratorio, facturación: ejecución de órdenes, cargos, honorarios, estatus de cama." },
+      { icon: "🏛️", type: "aseg", label: "Aseguradora", desc: "Auditorías concurrentes y renovaciones de autorización durante la estancia." },
+    ],
+    friction: "El equipo de enfermería trabaja en SAP pero recibe las órdenes del médico que están en EMED. Puede haber un gap de comunicación entre lo que el médico ordena y lo que enfermería ejecuta.",
+    kq: "¿Cómo comunica el médico sus órdenes a enfermería? ¿Enfermería puede ver las órdenes de EMED directamente en SAP o necesita que el médico las comunique por otro canal?"
+  },
+  {
+    id: 6, color: "#7B5EA7",
+    label: "Etapa 6",
+    title: "Renovación de Autorización con Aseguradora",
+    subtitle: "Extensión de cobertura para estancias prolongadas",
+    badges: ["SAP", "ASEG"],
+    steps: [
+      { t: "Se identifica que la autorización inicial está próxima a vencer (días de estancia)", sys: "SAP" },
+      { t: "Ejecutivo de cuenta prepara el informe de evolución para la aseguradora", sys: "SAP" },
+      { t: "Médico tratante genera nota de evolución que justifica la continuación", sys: "EMED" },
+      { t: "Se envía solicitud de renovación a la aseguradora con informe médico", sys: "ASEG" },
+      { t: "Aseguradora responde con extensión de autorización o solicita más información", sys: "ASEG" },
+      { t: "Se registra la nueva autorización en SAP con los días adicionales aprobados", sys: "SAP" },
+    ],
+    systems: [
+      { icon: "🗄️", type: "sap", label: "SAP", desc: "Seguimiento de días autorizados, preparación de informes, registro de renovaciones." },
+      { icon: "💊", type: "emed", label: "EMED", desc: "Nota médica de evolución que justifica la continuación de la estancia." },
+      { icon: "🏛️", type: "aseg", label: "Aseguradora", desc: "Evaluación de la solicitud de extensión. Puede tomar horas o días." },
+    ],
+    friction: "Si no hay un sistema de alertas automáticas cuando una autorización está por vencer, el hospital puede generar días de estancia sin cobertura, creando glosas.",
+    kq: "¿SAP tiene alguna alerta automática cuando la autorización de una aseguradora está próxima a vencer? ¿O el seguimiento es manual?"
+  },
+  {
+    id: 7, color: "#E07B2A",
+    label: "Etapa 7 — CRÍTICA",
+    title: "Decisión de Alta Médica Hospitalaria",
+    subtitle: "El médico determina que el paciente puede ser egresado",
+    badges: ["EMED", "SAP"],
+    steps: [
+      { t: "Médico tratante evalúa la evolución y determina que el paciente está listo para el alta", sys: null },
+      { t: "Médico registra el alta médica en EMED con indicaciones post-hospitalización", sys: "EMED" },
+      { t: "Se genera el resumen de egreso / epicrisis en EMED", sys: "EMED" },
+      { t: "EMED notifica (¿cómo?) a SAP / admisiones el alta médica", sys: "SAP" },
+      { t: "Médico genera recetas y referencias para seguimiento ambulatorio", sys: "EMED" },
+      { t: "Enfermería de piso es notificada del alta y prepara al paciente", sys: "SAP" },
+    ],
+    systems: [
+      { icon: "💊", type: "emed", label: "EMED", desc: "Alta médica, epicrisis, recetas, indicaciones post-alta. Generado por el médico especialista." },
+      { icon: "🗄️", type: "sap", label: "SAP", desc: "Recepción de la notificación del alta para iniciar el proceso administrativo de egreso." },
+    ],
+    friction: "La brecha más grande del sistema. Si EMED no notifica automáticamente a SAP cuando el médico da el alta, el proceso administrativo no inicia y el paciente espera horas en la habitación.",
+    kq: "¿Cómo le llega la notificación del alta médica al equipo de facturación / admisiones? ¿Es automático desde EMED, SAP, llamada telefónica o el médico va a avisar?"
+  },
+  {
+    id: 8, color: "#1B2C4E",
+    label: "Etapa 8",
+    title: "Consolidación de Cuenta y Alta Administrativa",
+    subtitle: "Cierre de la cuenta hospitalaria y preparación del reclamo a la aseguradora",
+    badges: ["SAP", "ASEG"],
+    steps: [
+      { t: "Admisiones / facturación inicia la consolidación de todos los cargos en SAP", sys: "SAP" },
+      { t: "Se verifican y cierran cargos de farmacia (todos los medicamentos de la estancia)", sys: "SAP" },
+      { t: "Se verifican cargos de laboratorio e imágenes de toda la estancia", sys: "SAP" },
+      { t: "Se verifican honorarios de todos los especialistas que intervinieron", sys: "SAP" },
+      { t: "Se verifican cargos de insumos, procedimientos quirúrgicos y sala", sys: "SAP" },
+      { t: "Se realizan ajustes por diferencias con la autorización de la aseguradora", sys: "SAP" },
+      { t: "Se presenta la cuenta al paciente o familiar para revisión", sys: null },
+      { t: "Paciente / familiar aprueba y firma el egreso", sys: null },
+      { t: "Paciente abandona físicamente la habitación y el hospital", sys: null },
+    ],
+    systems: [
+      { icon: "🗄️", type: "sap", label: "SAP", desc: "Consolidación completa de la cuenta. Todos los cargos de la estancia deben estar cerrados en SAP antes de emitir el reclamo." },
+    ],
+    friction: "Las estancias largas generan cuentas complejas con múltiples especialistas y cargos diarios. Cualquier cargo faltante retrasa el cierre y genera retrasos en el egreso.",
+    kq: "¿Cuánto tiempo toma consolidar la cuenta de una hospitalización de 3-5 días? ¿Cuál es el cargo o proceso que más frecuentemente retrasa el cierre?"
+  },
+  {
+    id: 9, color: "#1B7A8F",
+    label: "Etapa 9",
+    title: "Liquidación y Envío de Reclamo",
+    subtitle: "Presentación formal del reclamo a la aseguradora y liberación de la cama",
+    badges: ["SAP", "ASEG"],
+    steps: [
+      { t: "Se genera el reclamo formal de la hospitalización desde SAP", sys: "SAP" },
+      { t: "Se adjunta la documentación requerida: epicrisis, autorizaciones, facturas", sys: "SAP" },
+      { t: "Se envía el reclamo a la aseguradora por el canal correspondiente", sys: "ASEG" },
+      { t: "Se actualiza el estado de la cama en SAP: 'disponible para limpieza'", sys: "SAP" },
+      { t: "Housekeeping limpia y prepara la habitación para el siguiente paciente", sys: null },
+      { t: "La cama queda disponible en SAP para nuevo ingreso", sys: "SAP" },
+      { t: "Aseguradora acusa recibo y abre el expediente de liquidación", sys: "ASEG" },
+    ],
+    systems: [
+      { icon: "🗄️", type: "sap", label: "SAP", desc: "Generación del reclamo, liberación de la cama, seguimiento del pago." },
+      { icon: "🏛️", type: "aseg", label: "Aseguradora", desc: "Recepción, auditoría y pago del reclamo. Proceso que puede tomar días o semanas." },
+    ],
+    friction: "La documentación incompleta (falta de epicrisis, autorización no registrada, código incorrecto) es la causa principal de glosas y retrasos en el pago.",
+    kq: "¿Cuántos días tarda en promedio una aseguradora en liquidar una hospitalización desde que se envía el reclamo? ¿Cuál es la tasa de glosas actual?"
+  }
+];
+
+// STATE
+const ST = {};
+const NOTES = {};
+const NEWS = {};
+STAGES.forEach(s => { ST[s.id] = 'pending'; NOTES[s.id] = ''; NEWS[s.id] = []; });
+
+// RENDER
+function render() {
+  const fl = document.getElementById('flow');
+  fl.innerHTML = '';
+  STAGES.forEach((stage, idx) => {
+    const card = document.createElement('div');
+    card.className = 'stage-card' + (ST[stage.id] !== 'pending' ? ' ' + ST[stage.id] : '');
+    card.id = 'sc-' + stage.id;
+
+    const badges = stage.badges.map(b => {
+      const cls = b === 'SAP' ? 'badge-sap' : b === 'EMED' ? 'badge-emed' : b === 'ASEG' ? 'badge-aseg' : '';
+      return `<span class="badge ${cls}">${b}</span>`;
+    }).join('');
+
+    const st = ST[stage.id];
+    const stText = st === 'confirmed' ? '✓ Etapa confirmada' : st === 'modified' ? '⚠ Etapa modificada — ver nota' : '';
+    const noteSnippet = NOTES[stage.id] ? `<span class="status-note">"${NOTES[stage.id]}"</span>` : '';
+
+    let stepsHtml = stage.steps.map((step, si) => {
+      const sCls = step.sys === 'SAP' ? 'bs' : step.sys === 'EMED' ? 'be' : step.sys === 'ASEG' ? 'badge-mini' + '" style="background:#EDE7F6;color:#7B5EA7"' : '';
+      const sLabel = step.sys ? `<span class="step-sys badge-mini ${sCls}">${step.sys}</span>` : '';
+      return `<li class="step-item" onclick="toggleStep(this)" title="Toque para confirmar">
+        <div class="step-num">${si+1}</div>
+        <span class="step-text">${step.t}</span>
+        ${sLabel}
+      </li>`;
+    }).join('');
+
+    const newStepsHtml = NEWS[stage.id].map((ns, ni) => `
+      <li class="new-step">
+        <div class="step-num" style="background:var(--orange);color:white">${stage.steps.length+ni+1}</div>
+        <span class="step-text">${ns}</span>
+        <span class="new-badge">NUEVO</span>
+      </li>`).join('');
+
+    const sysHtml = stage.systems.map(sys => `
+      <div class="sys-item">
+        <div class="sys-icon ${sys.type}">${sys.icon}</div>
+        <div class="sys-text"><strong>${sys.label}</strong> — ${sys.desc}</div>
+      </div>`).join('');
+
+    card.innerHTML = `
+      <div class="stage-header" onclick="toggleCard(${stage.id})">
+        <div class="stage-number" style="background:${stage.color}">${stage.id}</div>
+        <div class="stage-header-content">
+          <div>
+            <div class="stage-label">${stage.label}</div>
+            <div class="stage-title">${stage.title}</div>
+            <div class="stage-subtitle">${stage.subtitle}</div>
+          </div>
+          <div class="stage-meta">
+            <div class="stage-badges">${badges}</div>
+            <div class="stage-expand-btn">▼</div>
+          </div>
+        </div>
+      </div>
+      <div class="status-ribbon">${stText}${noteSnippet}</div>
+      <div class="stage-body">
+        <div class="stage-body-inner">
+          <div>
+            <div class="section-label">Pasos del proceso (toque para confirmar)</div>
+            <ul class="steps-list">${stepsHtml}${newStepsHtml}</ul>
+          </div>
+          <div class="right-panel">
+            <div class="systems-box">
+              <div class="section-label">Sistemas involucrados</div>
+              ${sysHtml}
+            </div>
+            ${stage.friction ? `<div class="friction-note"><span class="fn-label">⚠ FRICCIÓN PROBABLE</span>${stage.friction}</div>` : ''}
+            ${stage.kq ? `<div class="key-q"><span class="kq-label">❓ PREGUNTA CLAVE</span>${stage.kq}</div>` : ''}
+          </div>
+        </div>
+        <div class="stage-actions">
+          <button class="btn-action btn-confirm ${st==='confirmed'?'active':''}" onclick="event.stopPropagation();setStatus(${stage.id},'confirmed')">✓ Confirmar</button>
+          <button class="btn-action btn-modify ${st==='modified'?'active':''}" onclick="event.stopPropagation();setStatus(${stage.id},'modified')">✎ Modificar</button>
+          <button class="btn-action btn-add" onclick="event.stopPropagation();toggleAdd(${stage.id})">+ Agregar paso</button>
+          <button class="btn-action btn-note" onclick="event.stopPropagation();toggleNote(${stage.id})">✍ Nota</button>
+        </div>
+        <div class="note-area" id="na-${stage.id}">
+          <textarea class="note-input" id="ni-${stage.id}" placeholder="Escriba la corrección o diferencia observada con Marinela…">${NOTES[stage.id]}</textarea>
+          <button class="btn-save" onclick="saveNote(${stage.id})">Guardar</button>
+        </div>
+        <div class="add-area" id="aa-${stage.id}">
+          <input type="text" class="add-input" id="ai-${stage.id}" placeholder="Paso faltante identificado durante la sesión…" />
+          <button class="btn-save-add" onclick="saveStep(${stage.id})">+ Agregar</button>
+        </div>
+      </div>`;
+
+    fl.appendChild(card);
+    if (idx < STAGES.length - 1) {
+      const conn = document.createElement('div');
+      conn.className = 'connector';
+      conn.innerHTML = '<div class="conn-arrow">↓</div>';
+      fl.appendChild(conn);
+    }
+  });
+  updateStats();
+  updateSummary();
+}
+
+function toggleCard(id) {
+  document.getElementById('sc-'+id).classList.toggle('open');
+}
+function toggleStep(el) { el.classList.toggle('step-ok'); }
+function toggleNote(id) {
+  const a = document.getElementById('na-'+id);
+  a.classList.toggle('vis');
+  if (a.classList.contains('vis')) document.getElementById('ni-'+id).focus();
+}
+function toggleAdd(id) {
+  const a = document.getElementById('aa-'+id);
+  a.classList.toggle('vis');
+  if (a.classList.contains('vis')) document.getElementById('ai-'+id).focus();
+}
+function saveNote(id) {
+  NOTES[id] = document.getElementById('ni-'+id).value.trim();
+  document.getElementById('na-'+id).classList.remove('vis');
+  updateSummary(); toast('✓ Nota guardada', 'ok');
+}
+function saveStep(id) {
+  const v = document.getElementById('ai-'+id).value.trim();
+  if (!v) return;
+  NEWS[id].push(v);
+  document.getElementById('ai-'+id).value = '';
+  document.getElementById('aa-'+id).classList.remove('vis');
+  render();
+  setTimeout(() => { document.getElementById('sc-'+id).classList.add('open'); }, 50);
+  toast('✓ Paso nuevo agregado', 'ok');
+}
+function setStatus(id, s) {
+  ST[id] = ST[id] === s ? 'pending' : s;
+  render();
+  setTimeout(() => {
+    document.getElementById('sc-'+id).classList.add('open');
+    if (s === 'modified' && ST[id] === 'modified') {
+      document.getElementById('na-'+id).classList.add('vis');
+      document.getElementById('ni-'+id).focus();
+    }
+  }, 50);
+  toast(ST[id] === 'pending' ? 'Estado reiniciado' : s === 'confirmed' ? '✓ Etapa confirmada' : '⚠ Marcada para modificación', ST[id] === 'pending' ? '' : s === 'confirmed' ? 'ok' : 'warn');
+}
+function updateStats() {
+  const vals = Object.values(ST);
+  const c = vals.filter(v=>v==='confirmed').length;
+  const m = vals.filter(v=>v==='modified').length;
+  const n = Object.values(NEWS).reduce((a,b)=>a+b.length,0);
+  document.getElementById('cnt-c').textContent = c;
+  document.getElementById('cnt-m').textContent = m;
+  document.getElementById('cnt-n').textContent = n;
+  document.getElementById('s-c').textContent = c;
+  document.getElementById('s-m').textContent = m;
+  document.getElementById('s-p').textContent = vals.filter(v=>v==='pending').length;
+  document.getElementById('s-n').textContent = n;
+}
+function updateSummary() {
+  const el = document.getElementById('notes-out');
+  const all = [];
+  STAGES.forEach(s => {
+    if (NOTES[s.id]) all.push({id:s.id, title:s.title, note:NOTES[s.id]});
+    NEWS[s.id].forEach(ns => all.push({id:s.id, title:s.title, note:'[PASO NUEVO]: '+ns}));
+  });
+  el.innerHTML = all.length === 0
+    ? '<p class="no-notes">Las notas aparecerán aquí conforme se capturen durante la sesión.</p>'
+    : all.map(n=>`<p><span class="ntag"><span class="ntag-s">E${n.id}</span>${n.title}</span> — ${n.note}</p>`).join('');
+}
+function resetAll() {
+  if (!confirm('¿Reiniciar todo el estado? Se perderán notas y marcas.')) return;
+  STAGES.forEach(s => { ST[s.id]='pending'; NOTES[s.id]=''; NEWS[s.id]=[]; });
+  render(); toast('Estado reiniciado');
+}
+function toast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type ? ' '+type : '');
+  setTimeout(()=>t.classList.remove('show'), 2400);
+}
+function openModal() {
+  const c = document.getElementById('modal-content');
+  const vals = Object.values(ST);
+  const confirmed = vals.filter(v=>v==='confirmed').length;
+  const modified  = vals.filter(v=>v==='modified').length;
+  const pending   = vals.filter(v=>v==='pending').length;
+  const newSteps  = Object.values(NEWS).reduce((a,b)=>a+b.length,0);
+  let html = `<div class="msec"><h3>Estado General</h3>
+    <div class="mrow"><span class="mrl">Hospital</span><span class="mrv">Hospiten Paitilla</span></div>
+    <div class="mrow"><span class="mrl">Sesión</span><span class="mrv">Sesión 2 — Hospitalización</span></div>
+    <div class="mrow"><span class="mrl">Etapas totales</span><span class="mrv">9</span></div>
+    <div class="mrow"><span class="mrl">Confirmadas</span><span class="mrv ms-confirmed">${confirmed} ✓</span></div>
+    <div class="mrow"><span class="mrl">Modificadas</span><span class="mrv ms-modified">${modified}</span></div>
+    <div class="mrow"><span class="mrl">Pendientes</span><span class="mrv ms-pending">${pending}</span></div>
+    <div class="mrow"><span class="mrl">Pasos nuevos</span><span class="mrv ms-modified">${newSteps}</span></div>
+  </div>`;
+  html += `<div class="msec"><h3>Detalle por Etapa</h3>`;
+  STAGES.forEach(s => {
+    const st = ST[s.id];
+    const lbl = st==='confirmed'?'✓ Confirmado':st==='modified'?'⚠ Modificado':'— Pendiente';
+    const cls = 'ms-'+st;
+    html += `<div class="mrow"><span class="mrl">E${s.id}. ${s.title}</span><span class="mrv ${cls}">${lbl}</span></div>`;
+    if (NOTES[s.id]) html += `<div class="mnote">📝 ${NOTES[s.id]}</div>`;
+    NEWS[s.id].forEach(ns => { html += `<div class="mnote" style="background:#FFF4E5">➕ ${ns}</div>`; });
+  });
+  html += `</div>`;
+  c.innerHTML = html;
+  document.getElementById('modal').classList.add('vis');
+}
+function closeModal() { document.getElementById('modal').classList.remove('vis'); }
+function closeModalOut(e) { if (e.target===document.getElementById('modal')) closeModal(); }
+
+render();
+setTimeout(() => { document.getElementById('sc-1').classList.add('open'); }, 300);
+</script>
+</body>
+</html>
